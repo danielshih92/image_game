@@ -7,8 +7,8 @@ import sys
 import threading
 
 FPS = 60
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 960 # 640*1.5 = 960
+HEIGHT = 720 # 480*1.5 = 720
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
@@ -18,7 +18,7 @@ ORANGE = (255, 165, 0)
 
 global game_start_time
 global score
-global highest_score
+global longest_time
 global check_time
 global chance
 global stop_the_camera
@@ -41,6 +41,7 @@ def camera_thread():
     global the_x
     global the_y
     global done
+    global stop_the_camera
     tracker = cv2.TrackerCSRT_create()  # 創建追蹤器
     tracking = False  # 設定 False 表示尚未開始追蹤
 
@@ -69,9 +70,11 @@ def camera_thread():
             if success:
                 p1 = [int(point[0]), int(point[1])]
                 p2 = [int(point[0] + point[2]), int(point[1] + point[3])]
-                the_x = int(point[0] + point[2] / 2)
-                the_y = int(point[1] + point[3] / 2)
+                the_x = int((point[0] + point[2] / 2)*1.5)
+                the_y = int((point[1] + point[3] / 2)*1.5)
+                draw_x , draw_y = int(point[0] + point[2] / 2), int(point[1] + point[3] / 2)
                 cv2.rectangle(frame, p1, p2, (0, 0, 255), 3)  # 根據座標，繪製四邊形，框住要追蹤的物件
+                cv2.circle(frame, (draw_x, draw_y), 5, GREEN, -1)
 
         cv2.imshow('oxxostudio', frame)
 
@@ -94,13 +97,14 @@ pygame.mixer.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("石帥華做的遊戲")
 clock = pygame.time.Clock()
-highest_score = 0
+longest_time = 0
 check_time = 0
 
 
 # load image
 background_img_original = pygame.image.load(os.path.join("img", "background.png")).convert()
-background_img = pygame.transform.scale(background_img_original, (640, 480))
+ending_background_img = pygame.image.load(os.path.join("img", "doggy.png")).convert()
+background_img = pygame.transform.scale(background_img_original, (WIDTH, HEIGHT))
 ending_backgroung_img = pygame.image.load(os.path.join("img", "daddy.png")).convert()
 bullet_img_first = pygame.image.load(os.path.join("img", "bullet.png")).convert()
 player_img = pygame.image.load(os.path.join("img", "dad1.png")).convert()
@@ -119,10 +123,10 @@ for i in range(3):
 
 rock_imgs = []
 for i in range(7):
-    ball_size = random.randrange(30, 60)
+    ball_size = random.randrange(40, 110)
     ball_img = pygame.image.load(os.path.join("img", f"ball{i}.png")).convert()
     if i ==2:
-        rock_imgs.append(pygame.transform.scale(ball_img, (60, 60)))
+        rock_imgs.append(pygame.transform.scale(ball_img, (120, 120)))
     else:
         rock_imgs.append(pygame.transform.scale(ball_img, (ball_size, ball_size)))
 
@@ -197,38 +201,45 @@ def draw_level(surf, text, size, x, y):
 
 def draw_init():
     screen.blit(background_img, (0, 0))
-    draw_text(screen, "老爸戰爭", 64, WIDTH/2, HEIGHT/4)
-    draw_text(screen, "按下a開始圈選物件", 24, WIDTH / 2, HEIGHT / 4 + 100)
-    draw_text(screen, "按下Enter開始遊戲", 24, WIDTH / 2, HEIGHT / 4 + 160)
+    draw_text(screen, "影像辨識躲避球", 64, WIDTH/2, HEIGHT/4)
+    draw_text(screen, "按下a開始圈選物件", 24, WIDTH / 2, HEIGHT / 4 + 140)
+    draw_text(screen, "按下Enter開始遊戲", 24, WIDTH / 2, HEIGHT / 4 + 210)
     pygame.display.update()
     waiting = True
     while waiting:
         clock.tick(FPS)
         # get input
+        global stop_the_camera
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 stop_the_camera = True
                 return True
-            elif event.type == pygame.KEYUP and done:
+            elif done:
                 waiting = False
                 return False
 
 def draw_end():
     waiting = True
     while waiting:
+        # display
         screen.blit(background_img, (0, 0))
-        screen.blit(ending_backgroung_img, (237, 100))
-        draw_text(screen, "父親節快樂!", 64, WIDTH / 2, HEIGHT / 5)
-        draw_text(screen, "重新開始: 按 a", 24, WIDTH / 2, HEIGHT / 2)
-        draw_text(screen, f"你的分數是:{score}", 24, WIDTH/2, HEIGHT / 2 +30)
-        global highest_score
-        if score >= highest_score:
-            highest_score = score
-        draw_text(screen, f"最高分是:{highest_score}", 24, WIDTH / 2, HEIGHT / 2 + 60)
+        screen.blit(ending_background_img, (355, 160))
+        draw_text(screen, "恭喜您被擊落!", 64, WIDTH / 2, HEIGHT / 5-100)
+        draw_text(screen, "重新開始: 按 a", 24, WIDTH / 2, HEIGHT / 2 + 60)
+        global check_time
+        real_time = round(check_time/1000, 3)
+        draw_text(screen, f"你存活的時間是:{real_time}秒", 24, WIDTH/2, HEIGHT / 2 +150)
+        global longest_time
+        if check_time >= longest_time:
+            longest_time = check_time
+        real_longest_time = round(longest_time/1000, 3)
+        draw_text(screen, f"最長的存活時間是:{real_longest_time}秒", 24, WIDTH / 2, HEIGHT / 2 + 100)
+        # update
         pygame.display.update()
-        clock.tick(FPS)  # The number of times this loop can be executed in one second
+        clock.tick(FPS)
         # get input
+        global stop_the_camera
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -333,14 +344,14 @@ class Rock(pygame.sprite.Sprite):
                 self.speedy = random.randrange(5, 15)
                 self.speedx = random.randrange(-3, 3)
             if now - game_start_time >= 10000 and now - game_start_time < 15000:
-                self.speedy = random.randrange(25, 30)
-                self.speedx = random.randrange(-4, 4)
+                self.speedy = random.randrange(10, 20)
+                self.speedx = random.randrange(-3, 3)
             if now - game_start_time >= 15000 and now - game_start_time < 20000:
-                self.speedy = random.randrange(40, 50)
-                self.speedx = random.randrange(-5, 5)
+                self.speedy = random.randrange(35, 45)
+                self.speedx = random.randrange(-4, 4)
             if now - game_start_time >= 20000:
-                self.speedy = random.randrange(65, 75)
-                self.speedx = random.randrange(-8, 8)
+                self.speedy = random.randrange(55, 65)
+                self.speedx = random.randrange(-7, 7)
             global check_time
             check_time = now - game_start_time
 
@@ -411,6 +422,7 @@ while running:
         game_start_time = pygame.time.get_ticks()
     clock.tick(FPS)  # The number of times this loop can be executed in one second
     # get input
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
@@ -441,7 +453,8 @@ while running:
     screen.fill(BLACK)  # (R, G, B)
     screen.blit(background_img, (0, 0))
     all_sprites.draw(screen)
-    draw_text(screen, "score: " + str(score), 20, WIDTH/2, 10)
+    display_check_time = round(check_time/1000, 3)
+    draw_text(screen, "time: " + str(display_check_time), 20, WIDTH/2, 10)
     if player.level <=4:
         draw_level(screen,"level: " + str(player.level),20, WIDTH/2-100, 10)
     if player.level == 5:
@@ -452,4 +465,3 @@ while running:
     pygame.display.update()
 
 pygame.quit()
-
