@@ -1,6 +1,6 @@
 # image_game
  The game is designed for the player to control a character using hand gestures tracked by the camera.  The player must dodge falling rocks while maintaining their 
- health and lives. The game includes levels and keeps track of the player's score.
+ health and lives. The game includes levels and keeps track of the player's score.  
 # Running
  $ pip install pygame  
  $ pip install mediapipe  
