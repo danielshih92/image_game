@@ -1,10 +1,8 @@
-# image_game
+# image recognization game
  The game is designed for the player to control a character using hand gestures tracked by the camera.  The player must dodge falling rocks while maintaining their 
  health and lives. The game includes levels(from easy mode to impossible mode) and keeps track of the player's score.  
 # Running
- $ pip install pygame  
- $ pip install mediapipe  
- $ pip install opencv-python  
+ $ pip install pygame mediapipe opencv-python  
  $ python main.py  
 # How to Play
  Start the game by pressing 'a' to initiate object selection.  
