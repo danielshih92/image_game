@@ -13,4 +13,4 @@
  Gesture your hand left, right, up, or down to move the player character.  
  Press 'a' to initiate object selection for hand tracking.
 # Gameplay
-
+https://youtu.be/VQnMegBmJAA
